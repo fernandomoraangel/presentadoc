@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Doctoral: Narrativas Inmersivas y Co-creación</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <!-- Three.js para animación 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #e5e7eb;
+            overflow: hidden;
+            /* Oculta la barra de scroll global */
+            /* Clave para la navegación personalizada */
+        }
+
+        /* Contenedor principal para la transición de secciones */
+        #main-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            /* transition: transform 1.2s cubic-bezier(0.76, 0, 0.24, 1); */
+            /* Eliminada la transición de transform */
+        }
+
+        /* Cada sección ocupa toda la pantalla */
+        .scroll-section {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1.5rem;
+            position: absolute;
+            /* Cambiado a absolute */
+            top: 0;
+            z-index: 1;
+            /* Asegura que las secciones estén por encima del canvas */
+            /* Se controlará con JS */
+            left: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+            /* Incluye padding en la altura */
+            /* Oculta la barra de scroll en secciones individuales */
+        }
+
+        /* Estilos específicos para la sección de video de introducción */
+        #video-intro {
+            padding: 0;
+            /* Elimina el padding para la sección de video */
+        }
+
+        #video-intro>.content-overlay {
+            width: 100%;
+            max-width: 100%;
+            /* Anula el max-width */
+            height: 100%;
+            display: flex;
+            /* Asegura que el flexbox centre el contenido si es necesario */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Canvas de fondo fijo y sutil */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.5;
+            /* Aumentada la opacidad para mayor visibilidad */
+        }
+
+        /* Contenido superpuesto */
+        .content-overlay {
+            position: relative;
+            z-index: 10;
+            /* Aumentado para asegurar que esté por encima */
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Animaciones de entrada */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1s ease-out 0.5s, transform 1s ease-out 0.5s;
+        }
+
+        .scroll-section.active .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Barra de navegación lateral */
+        .side-nav {
+            position: fixed;
+            top: 50%;
+            right: 25px;
+            transform: translateY(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .side-nav button {
+            width: 12px;
+            height: 12px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transition: all 0.4s ease;
+            position: relative;
+            border: none;
+            cursor: pointer;
+        }
+
+        .side-nav button .tooltip {
+            visibility: hidden;
+            width: 180px;
+            background-color: #1f2937;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            top: -5px;
+            right: 150%;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .side-nav button:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .side-nav button.active {
+            background-color: #38bdf8;
+            transform: scale(1.5);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Popups Modales */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 150;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #modal-container {
+            position: relative;
+            background-color: #111827;
+            border: 1px solid #38bdf8;
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 90vw;
+            max-width: 600px;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        #modal-overlay.visible #modal-container {
+            transform: scale(1);
+        }
+
+        #modal-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        #modal-close-btn:hover {
+            color: #fff;
+        }
+
+        /* Carousel de Imágenes */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 300px;
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            background: rgba(17, 24, 39, 0.2);
+        }
+
+        .carousel-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Timeline para el Cronograma */
+        .timeline {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: #374151;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+        }
+
+        .timeline-container {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+        }
+
+        .timeline-container.left {
+            left: 0;
+        }
+
+        .timeline-container.right {
+            left: 50%;
+        }
+
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            background-color: #0a0a0a;
+            border: 4px solid #38bdf8;
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .right::after {
+            left: -10px;
+        }
+
+        .timeline-content {
+            padding: 20px;
+            background-color: rgba(23, 37, 51, 0.5);
+            border: 1px solid #374151;
+            backdrop-filter: blur(5px);
+            position: relative;
+            border-radius: 6px;
+        }
+
+        /* Marca de agua del logo */
+        .watermark-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            /* Ajusta el tamaño según sea necesario */
+            opacity: 0.18;
+            /* Ajusta la opacidad según sea necesario */
+            z-index: 5;
+            /* Asegura que esté entre el canvas y el contenido */
+            pointer-events: none;
+            /* Permite hacer clic a través de la imagen */
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SECCIÓN 0: VIDEO INTRO -->
+    <!-- Canvas de fondo persistente -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Navegación Lateral -->
+    <nav class="side-nav"></nav>
+
+    <!-- Contenedor del Modal -->
+    <div id="modal-overlay">
+        <div id="modal-container">
+            <button id="modal-close-btn">&times;</button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <div id="main-container">
+        <!-- SECCIÓN 0: VIDEO INTRO -->
+        <section id="video-intro" class="scroll-section">
+            <div class="content-overlay reveal">
+                <video src="intro.mp4" autoplay muted playsinline
+                    style="width: 100%; height: 100%; object-fit: cover;"></video>
+            </div>
+        </section>
+        <!-- SECCIÓN 1: INICIO -->
+        <section id="inicio" class="scroll-section">
+            <div class="content-overlay text-center reveal">
+                <h1
+                    class="text-4xl md:text-6xl font-extrabold mb-2 leading-tight tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-cyan-300">
+                    Integración de narrativas inmersivas
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-400">
+                    como catalizadoras de la co-creación en las artes del tiempo para entornos 3d simulados
+                </p>
+                <div class="text-lg text-gray-400 mt-8">
+                    <p><span class="font-bold text-sky-400">Aspirante:</span> </p>
+                    <p>Fernando Mora Angel</p>
+                    <p><span class="font-bold text-sky-400">Director de Tesis Propuesto:</span> </p>
+                    <p>Gabriel Jaime Vieira Posada</p>
+                    <div class="text-xl text-gray-500 mt-4">
+                        <p>Doctorado en Artes</p>
+                        <p>Facultad de Artes</p>
+                        <p>2025</p>
+                    </div>
+                </div>
+            </div>
+            <img src="logo.png" alt="Logo" class="watermark-logo">
+        </section>
+
+        <!-- SECCIÓN 2: EPÍGRAFE -->
+        <section id="epigrafe" class="scroll-section">
+            <div class="content-overlay text-center reveal">
+                <blockquote class="text-2xl md:text-4xl italic text-gray-300 max-w-4xl mx-auto leading-relaxed">
+                    "Ver un mundo en un grano de arena<br>
+                    y un cielo en una flor silvestre,<br>
+                    sostener el infinito en la palma de la mano<br>
+                    y la eternidad en una hora."
+                </blockquote>
+                <footer class="mt-6 text-xl text-sky-400">
+                    William Blake
+                </footer>
+                <p class="text-xl text-gray-500 mt-4">Augurios de Inocencia (c. 1803)</p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: PROBLEMA -->
+        <section id="problema" class="scroll-section">
+            <div class="content-overlay reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-8 text-center text-sky-400">El Problema: La Brecha</h2>
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="flex justify-center items-center">
+                        <div id="image-carousel" class="carousel-container">
+                            <div class="carousel-slide active"><img src="images/01.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/02.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/03.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/04.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/05.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/06.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/07.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/08.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/09.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/10.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/11.png" alt="Avatares"></div>
+                            <div class="carousel-slide active"><img src="images/12.png" alt="Avatares"></div>
+
+
+                        </div>
+                    </div>
+                    <div class="text-base md:text-lg text-gray-300 leading-relaxed space-y-4">
+                        <p>A pesar del auge de tecnologías inmersivas, existe un <span
+                                class="text-cyan-300 font-semibold">potencial subutilizado</span> para transformar los
+                            procesos de co-creación en las artes del tiempo.</p>
+                        <p>Las prácticas tradicionales, a menudo presenciales, contrastan con herramientas digitales que
+                            no siempre superan una lógica individual. Esto crea una **brecha metodológica, tecnológica y
+                            conceptual** que limita la innovación colaborativa.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 4: PREGUNTAS DE INVESTIGACIÓN -->
+        <section id="preguntas" class="scroll-section">
+            <div class="content-overlay reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-6 text-center text-sky-400">Preguntas de Investigación</h2>
+                <div
+                    class="bg-gray-800/30 p-6 md:p-8 rounded-2xl shadow-2xl border border-gray-700 max-w-5xl mx-auto mb-6 backdrop-blur-sm">
+                    <p class="text-lg md:text-xl text-center font-semibold text-cyan-300">¿Cómo se potencian los
+                        procesos de co-creación en las artes del tiempo mediante el uso de narrativas inmersivas en
+                        entornos 3D simulados apoyados con grandes modelos de lenguaje?</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4 text-left max-w-6xl mx-auto">
+                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm">
+                        <p class="text-gray-300 text-sm">1. ¿Cuáles son las estrategias de diseño de entornos 3D
+                            (narrativas, estéticas, de interacción) que potencian la co-creación en las artes del
+                            tiempo?</p>
+                    </div>
+                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm">
+                        <p class="text-gray-300 text-sm">2. ¿Cómo integrar efectivamente herramientas colaborativas y
+                            grandes modelos de lenguaje en entornos 3D para potenciar la creatividad y la co-creación?
+                        </p>
+                    </div>
+                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm">
+                        <p class="text-gray-300 text-sm">3. ¿Cómo validar la experiencia de co-creación al utilizar
+                            narrativas inmersivas en entornos 3D simulados?</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 5: OBJETIVOS -->
+        <section id="objetivos" class="scroll-section">
+            <div class="content-overlay reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-8 text-center text-sky-400">Objetivos</h2>
+                <div class="text-center max-w-5xl mx-auto mb-8">
+                    <!-- <h3 class="font-bold text-cyan-300 text-xl mb-2">Objetivo General</h3> -->
+                    <p class="text-base md:text-lg text-gray-300">Investigar, diseñar, desarrollar y validar un marco
+                        metodológico y tecnológico para la integración efectiva de narrativas inmersivas, apoyadas con
+                        grandes modelos de lenguaje, dentro de entornos 3D simulados interactivos y participativos, en
+                        las artes del tiempo.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+                    <!-- Objetivo 1 -->
+                    <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm text-center flex flex-col justify-center items-center h-40 cursor-pointer"
+                        data-popup-title="Objetivo 1: Identificar y analizar"
+                        data-popup-content="<div class='flex items-start gap-4'><svg class='w-12 h-12 text-cyan-300 flex-shrink-0' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' d='m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z' /></svg><p>Identificar y analizar las estrategias de diseño (narrativas, estéticas y de interacción) en entornos 3D, para catalizar la co-creación en las artes del tiempo.</p></div>">
+                        <svg class="w-12 h-12 text-cyan-300 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                        <h4 class="font-bold text-white text-2xl">Identificar y analizar</h4>
+                    </div>
+                    <!-- Objetivo 2 -->
+                    <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm text-center flex flex-col justify-center items-center h-40 cursor-pointer"
+                        data-popup-title="Objetivo 2: Experimentar"
+                        data-popup-content="<div class='flex items-start gap-4'><svg class='w-12 h-12 text-cyan-300 flex-shrink-0' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' d='M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75' /></svg><p>Experimentar con herramientas colaborativas avanzadas y grandes modelos de lenguaje en entornos 3D simulados, para dinamizar la creatividad y la participación en procesos de co-creación.</p></div>">
+                        <svg class="w-12 h-12 text-cyan-300 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                        </svg>
+                        <h4 class="font-bold text-white text-2xl">Experimentar</h4>
+                    </div>
+                    <!-- Objetivo 3 -->
+                    <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm text-center flex flex-col justify-center items-center h-40 cursor-pointer"
+                        data-popup-title="Objetivo 3: Diseñar y aplicar"
+                        data-popup-content="<div class='flex items-start gap-4'><svg class='w-12 h-12 text-cyan-300 flex-shrink-0' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' d='M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286Zm0 13.036h.008v.008h-.008v-.008Z' /></svg><p>Diseñar y aplicar metodologías de evaluación mixtas que permitan validar la experiencia de co-creación, midiendo aspectos como la interacción, la implicación y la calidad del resultado artístico.</p></div>">
+                        <svg class="w-12 h-12 text-cyan-300 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286Zm0 13.036h.008v.008h-.008v-.008Z" />
+                        </svg>
+                        <h4 class="font-bold text-white text-2xl">Diseñar y aplicar</h4>
+                    </div>
+                    <!-- Objetivo 4 -->
+                    <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm text-center flex flex-col justify-center items-center h-40 cursor-pointer"
+                        data-popup-title="Objetivo 4: Generar"
+                        data-popup-content="<div class='flex items-start gap-4'><svg class='w-12 h-12 text-cyan-300 flex-shrink-0' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' d='M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.354a15.997 15.997 0 0 1-4.5 0m4.5 0v-.374c0-1.037.84-1.875 1.875-1.875h.375c1.036 0 1.875.838 1.875 1.875v.375m-7.5 0v-.375c0-1.037.84-1.875 1.875-1.875h.375c1.036 0 1.875.838 1.875 1.875v.375M9 13.5h6M15 13.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z' /></svg><p>Generar un marco de referencia y un prototipo como aplicación práctica de las narrativas inmersivas en entornos 3D simulados para facilitar la co-creación.</p></div>">
+                        <svg class="w-12 h-12 text-cyan-300 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.354a15.997 15.997 0 0 1-4.5 0m4.5 0v-.374c0-1.037.84-1.875 1.875-1.875h.375c1.036 0 1.875.838 1.875 1.875v.375m-7.5 0v-.375c0-1.037.84-1.875 1.875-1.875h.375c1.036 0 1.875.838 1.875 1.875v.375M9 13.5h6M15 13.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        <h4 class="font-bold text-white text-2xl">Generar</h4>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 6: MARCO CONCEPTUAL -->
+        <section id="marco-conceptual" class="scroll-section">
+            <div class="content-overlay reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-8 text-center text-sky-400">Marco Conceptual</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+                    <!-- Card 1 -->
+                    <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm h-48 flex flex-col justify-center cursor-pointer"
+                        data-popup-title="Narrativas Inmersivas"
+                        data-popup-content="<p class='text-base mb-4'>Estructuras que no solo se cuentan, sino que se <strong>experimentan</strong>. Se explora cómo la sensación de presencia y la capacidad de agencia del usuario transforman la construcción de la historia.</p>
+                                             <h5 class='font-bold text-sky-400 mb-2'>Conceptos Clave:</h5>
+                                             <ul class='text-sm text-gray-400 space-y-2'>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z' /><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' /></svg>Inmersión (propiedad del sistema) vs. Presencia (efecto subjetivo).</li>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15.042 21.672L13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M5.834 7.75l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59' /></svg>Agencia como capacidad del usuario para afectar el mundo narrativo.</li>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5' /></svg>Narratología Computacional para formalizar y modelar la acción.</li>
+                                             </ul><p class='text-lg text-gray-500 mt-4'>Autores: Ryan, Murray, Laurel, Meister</p>">
+                        <svg class="w-12 h-12 text-cyan-300 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                        </svg>
+                        <h4 class="font-bold text-white mb-2 text-cyan-300 text-center">Narrativas Inmersivas</h4>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm h-48 flex flex-col justify-center cursor-pointer"
+                        data-popup-title="Co-creación y Colaboración"
+                        data-popup-content="<p class='text-base mb-4'>Proceso de <strong>creación colectiva</strong> donde la autoría es compartida y el resultado emerge de la interacción entre los participantes, superando el modelo de autor único.</p>
+                                             <h5 class='font-bold text-sky-400 mb-2'>Conceptos Clave:</h5>
+                                             <ul class='text-sm text-gray-400 space-y-2'>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 5l7 7-7 7M5 5l7 7-7 7' /></svg>Cultura de Convergencia e Inteligencia Colectiva.</li>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197m0 0A4 4 0 019 10.708M9 10.708V7.5a3 3 0 016 0v3.208M15 21a6 6 0 00-9-5.197' /></svg>Producción entre pares basada en el procomún (Peer Production).</li>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' /></svg>La 'base de datos' como forma simbólica que estructura la creación.</li>
+                                             </ul><p class='text-lg text-gray-500 mt-4'>Autores: Jenkins, Benkler, Cizek, Uricchio, Manovich</p>">
+                        <svg class="w-12 h-12 text-cyan-300 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m-7.5-2.962A3.75 3.75 0 0 1 15 12a3.75 3.75 0 0 1-2.25 3.512M15 12a3.75 3.75 0 0 0-7.5 0m7.5 0a3.75 3.75 0 0 1-7.5 0M3 13.5A3.75 3.75 0 0 1 7.5 12v-1.5a3.75 3.75 0 0 1 3-3.682m-3 3.682A3.75 3.75 0 0 1 6 6.75a3.75 3.75 0 0 1 7.5 0m-7.5 0A3.75 3.75 0 0 0 6 13.5m0-1.5A3.75 3.75 0 0 0 7.5 12" />
+                        </svg>
+                        <h4 class="font-bold text-white mb-2 text-cyan-300 text-center">Co-creación</h4>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm h-48 flex flex-col justify-center cursor-pointer"
+                        data-popup-title="Entornos 3D y Videojuegos"
+                        data-popup-content="<p class='text-base mb-4'>Espacios digitales que actúan como <strong>lienzos y escenarios interactivos</strong>. Se analizan como prototipos de narrativas inmersivas y plataformas para la convergencia digital y física.</p>
+                                             <h5 class='font-bold text-sky-400 mb-2'>Conceptos Clave:</h5>
+                                             <ul class='text-sm text-gray-400 space-y-2'>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M14.25 6.087c0-1.718-.694-3.3-1.84-4.44M14.25 6.087a3.375 3.375 0 013.375 3.375v1.5c0 1.256-.476 2.42-1.298 3.31M14.25 6.087l-2.435-2.435m2.435 2.435l-2.435 2.435M9.75 14.913c0 1.718.694 3.3 1.84 4.44M9.75 14.913a3.375 3.375 0 00-3.375-3.375v-1.5c0-1.256.476-2.42 1.298-3.31M9.75 14.913l2.435 2.435m-2.435-2.435l2.435-2.435' /></svg>Reglas, Juego e Interactividad.</li>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9' /></svg>El 'Metaverso' como espacio virtual persistente y compartido.</li>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c1.356 0 2.673-.11 3.955-.329a9.008 9.008 0 00-7.91 0A9.004 9.004 0 0112 21zm-4.263-8.536A4.004 4.004 0 017.737 9.03a4.004 4.004 0 014.526 0 4.004 4.004 0 012.263 3.434m-8.526 0a4.004 4.004 0 002.263 3.434m8.526 0a4.004 4.004 0 01-2.263 3.434m0 0A4.004 4.004 0 0112 16.53a4.004 4.004 0 01-2.263-2.064m0 0a4.004 4.004 0 00-2.263-2.064M12 3c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6zm0 0a6 6 0 00-5.996 5.996M12 3a6 6 0 015.996 5.996' /></svg>Efectos Psicológicos de la RV.</li>
+                                             </ul><p class='text-ls text-gray-500 mt-4'>Autores: Juul, Salen, Zimmerman, Ball, Bailenson</p>">
+                        <svg class="w-12 h-12 text-cyan-300 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="m21 7.5-2.25-1.313M21 7.5v2.25m0-2.25-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3 2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75 2.25-1.313M12 21.75V19.5m0 2.25-2.25-1.313m0-16.875L12 2.25l2.25 1.313M12 7.5v-2.25" />
+                        </svg>
+                        <h4 class="font-bold text-white mb-2 text-cyan-300 text-center">Entornos 3D Simulados</h4>
+                    </div>
+                    <!-- Card 4 -->
+                    <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm h-48 flex flex-col justify-center cursor-pointer"
+                        data-popup-title="Artes del Tiempo y Performance"
+                        data-popup-content="<p class='text-base mb-4'>Disciplinas cuya materia prima es el <strong>tiempo y la acción</strong> (teatro, danza, performance), analizando cómo se ven transformadas por la mediación digital y la tecnología.</p>
+                                             <h5 class='font-bold text-sky-400 mb-2'>Conceptos Clave:</h5>
+                                             <ul class='text-sm text-gray-400 space-y-2'>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9A2.25 2.25 0 0013.5 5.25h-9a2.25 2.25 0 00-2.25 2.25v9A2.25 2.25 0 004.5 18.75z' /></svg>'Liveness' y Cultura Mediatizada.</li>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-1.621-1.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25' /></svg>Performance Digital.</li>
+                                                <li class='flex items-center'><svg class='w-4 h-4 mr-2 text-cyan-400 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0-1.036.84-1.875 1.875-1.875s1.875.84 1.875 1.875S12.625 11.625 11.625 11.625 9.75 10.786 9.75 9.75z' /></svg>Corporalidad y Emergencia.</li>
+                                             </ul><p class='text-lg text-gray-500 mt-4'>Autores: Auslander, Dixon, Manning, López Cano</p>">
+                        <svg class="w-12 h-12 text-cyan-300 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <h4 class="font-bold text-white mb-2 text-cyan-300 text-center">Artes del Tiempo</h4>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 7: MARCO METODOLÓGICO -->
+        <section id="marco-metodologico" class="scroll-section">
+            <div class="content-overlay reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-8 text-center text-sky-400">Marco Metodológico</h2>
+                <div class="grid md:grid-cols-2 gap-8 items-center max-w-5xl mx-auto">
+                    <div class="space-y-4">
+                        <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm cursor-pointer"
+                            data-popup-title="Paradigma: Investigación-Creación"
+                            data-popup-content="<p class='text-base mb-4'>Este paradigma reconoce que la práctica artística y el desarrollo tecnológico no son solo objetos de estudio, sino <strong>vías legítimas para la generación de conocimiento</strong>. La obra resultante (el prototipo) es, en sí misma, una forma de indagación y un resultado de investigación, donde el 'hacer' (poïesis) es fundamental.</p>
+                                                  <p class='text-lg text-gray-500 mt-4'>Autores: Nelson, Candy, Haseman, Sullivan</p>">
+                            <h4 class="font-bold text-white text-cyan-300 text-lg mb-2 flex items-center"><svg
+                                    class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                    </path>
+                                </svg>Investigación-Creación</h4>
+                        </div>
+                        <div class="interactive-card bg-gray-800/20 p-6 rounded-xl border border-gray-700 backdrop-blur-sm cursor-pointer"
+                            data-popup-title="Enfoque: Investigación Basada en Diseño (DBR)"
+                            data-popup-content="<p class='text-base mb-4'>Un enfoque pragmático y cíclico ideal para este proyecto. Permite <strong>diseñar, construir y evaluar</strong> soluciones a problemas complejos en contextos reales, refinando la teoría a través de la práctica iterativa. Es una metodología de intervención que busca generar principios de diseño y conocimiento aplicable.</p>
+                                                  <p class='text-lg text-gray-500 mt-4'>Autores: Carroll, Dix, Norman</p>">
+                            <h4 class="font-bold text-white text-cyan-300 text-lg mb-2 flex items-center"><svg
+                                    class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>Investigación Basada en Diseño</h4>
+                        </div>
+                    </div>
+                    <div class="flex justify-center items-center">
+                        <div class="w-full max-w-xs p-4"><svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <title>Ciclo de Investigación-Creación</title>
+                                <defs>
+                                    <path id="circlePath"
+                                        d="M 100, 100 m -75, 0 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" />
+                                </defs>
+                                <path d="M 100, 100 m -75, 0 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" fill="none"
+                                    stroke="#0e7490" stroke-width="2" stroke-dasharray="5 5" /><text font-family="Inter"
+                                    font-size="14" fill="#67e8f9">
+                                    <textPath href="#circlePath" startOffset="0%">Diseñar → Construir → Evaluar →
+                                        Refinar →</textPath>
+                                </text>
+                                <path d="M100,50 L120,70 L80,70 Z" fill="#38bdf8" />
+                                <path d="M100,150 L120,130 L80,130 Z" fill="#38bdf8" />
+                            </svg></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 8: FASES DE LA METODOLOGÍA -->
+        <section id="fases" class="scroll-section">
+            <div class="content-overlay reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-8 text-center text-sky-400">Fases de la Metodología</h2>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-8 w-full max-w-6xl">
+                    <div
+                        class="flex-1 text-center p-4 border border-gray-700 rounded-lg bg-gray-900/20 backdrop-blur-sm">
+                        <div class="text-sky-400 font-black text-4xl mb-2">1</div>
+                        <h3 class="font-bold text-white text-lg mb-1">Fundamentación</h3>
+                        <p class="text-sm text-gray-400">Revisión teórica y análisis de casos.</p>
+                    </div>
+                    <div class="text-cyan-400 text-2xl hidden md:block">&rarr;</div>
+                    <div
+                        class="flex-1 text-center p-4 border border-gray-700 rounded-lg bg-gray-900/20 backdrop-blur-sm">
+                        <div class="text-sky-400 font-black text-4xl mb-2">2</div>
+                        <h3 class="font-bold text-white text-lg mb-1">Diseño Iterativo</h3>
+                        <p class="text-sm text-gray-400">Creación y refinamiento de prototipos.</p>
+                    </div>
+                    <div class="text-cyan-400 text-2xl hidden md:block">&rarr;</div>
+                    <div
+                        class="flex-1 text-center p-4 border border-gray-700 rounded-lg bg-gray-900/20 backdrop-blur-sm">
+                        <div class="text-sky-400 font-black text-4xl mb-2">3</div>
+                        <h3 class="font-bold text-white text-lg mb-1">Validación</h3>
+                        <p class="text-sm text-gray-400">Estudios con artistas usando el prototipo.</p>
+                    </div>
+                    <div class="text-cyan-400 text-2xl hidden md:block">&rarr;</div>
+                    <div
+                        class="flex-1 text-center p-4 border border-gray-700 rounded-lg bg-gray-900/20 backdrop-blur-sm">
+                        <div class="text-sky-400 font-black text-4xl mb-2">4</div>
+                        <h3 class="font-bold text-white text-lg mb-1">Síntesis</h3>
+                        <p class="text-sm text-gray-400">Generación del marco y la tesis.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 9: CRONOGRAMA -->
+        <section id="cronograma" class="scroll-section">
+            <div class="content-overlay reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4 text-center text-sky-400">Cronograma Interactivo</h2>
+                <div class="timeline">
+                    <div class="timeline-container left">
+                        <div class="timeline-content">
+                            <h3 class="font-bold text-white text-cyan-300">Fase 1: Fundamentación (M1-M6)</h3>
+                            <p class="text-xs text-gray-400 mt-1">Revisión literaria, análisis de casos, consultas con
+                                expertos y definición de requisitos. <span
+                                    class="font-bold text-sky-400">Entregable:</span> Estado del arte.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-container right">
+                        <div class="timeline-content">
+                            <h3 class="font-bold text-white text-cyan-300">Fase 2.1: Prototipo Inicial (M7-M12)</h3>
+                            <p class="text-xs text-gray-400 mt-1">Diseño conceptual y desarrollo del primer prototipo
+                                funcional (MVP). <span class="font-bold text-sky-400">Entregable:</span> Prototipo P1 y
+                                primer informe.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-container left">
+                        <div class="timeline-content">
+                            <h3 class="font-bold text-white text-cyan-300">Fase 2.2: Desarrollo Avanzado (M13-M24)</h3>
+                            <p class="text-xs text-gray-400 mt-1">Implementación de herramientas avanzadas e integración
+                                de LLMs. <span class="font-bold text-sky-400">Entregable:</span> Prototipo P2 refinado.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="timeline-container right">
+                        <div class="timeline-content">
+                            <h3 class="font-bold text-white text-cyan-300">Fase 3: Validación (M25-M30)</h3>
+                            <p class="text-xs text-gray-400 mt-1">Estudio principal de co-creación con artistas y
+                                recolección de datos mixtos. <span class="font-bold text-sky-400">Entregable:</span>
+                                Corpus de datos analizados.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-container left">
+                        <div class="timeline-content">
+                            <h3 class="font-bold text-white text-cyan-300">Fase 4: Síntesis (M31-M36)</h3>
+                            <p class="text-xs text-gray-400 mt-1">Análisis profundo, articulación del marco y redacción
+                                final de la tesis. <span class="font-bold text-sky-400">Entregable:</span> Tesis
+                                doctoral.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 10: CIERRE -->
+        <section id="cierre" class="scroll-section">
+            <div class="content-overlay text-center reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-8 text-sky-400">Hacia Nuevos Paradigmas Creativos</h2>
+                <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+                    Este proyecto busca construir una herramienta real y un marco teórico-práctico con un
+                    impacto tangible en la práctica artística, la educación digital y la forma en que entendemos la
+                    creación colaborativa.
+                </p>
+                <div class="mt-12 text-lg text-gray-400">
+                    <p class="font-bold text-2xl text-white">Gracias</p>
+                    <p>Fernando Mora Angel</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // --- Navegación Inmersiva ---
+            const container = document.getElementById('main-container');
+            const sections = document.querySelectorAll('.scroll-section');
+            const sideNav = document.querySelector('.side-nav');
+            let currentSection = 0;
+            let isScrolling = false;
+
+            sections.forEach((section, index) => {
+                const button = document.createElement('button');
+                button.dataset.index = index;
+                const tooltip = document.createElement('span');
+                tooltip.className = 'tooltip';
+                let sectionName = section.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                tooltip.textContent = sectionName;
+                button.appendChild(tooltip);
+                sideNav.appendChild(button);
+                button.addEventListener('click', () => {
+                    if (isScrolling) return;
+                    isScrolling = true;
+                    goToSection(index);
+                    setTimeout(() => { isScrolling = false; }, 1500);
+                });
+            });
+
+            const navButtons = sideNav.querySelectorAll('button');
+
+            function updateActiveState() {
+                sections.forEach((section, index) => {
+                    section.classList.toggle('active', index === currentSection);
+                });
+                navButtons.forEach((button, index) => {
+                    button.classList.toggle('active', index === currentSection);
+                });
+            }
+
+            function goToSection(index) {
+                if (index >= 0 && index < sections.length) {
+                    currentSection = index;
+
+                    // Ajustar la propiedad 'top' de cada sección
+                    sections.forEach((section, i) => {
+                        section.style.top = `${(i - currentSection) * 100}vh`;
+                    });
+
+                    updateActiveState();
+
+                    // Reiniciar el video si se regresa a la primera sección (índice 0)
+                    if (currentSection === 0) {
+                        const videoElement = sections[0].querySelector('video');
+                        if (videoElement) {
+                            videoElement.currentTime = 0;
+                            videoElement.play();
+                        }
+                    }
+                }
+            }
+
+            // Auto-avance después del video de introducción
+            const introVideo = sections[0].querySelector('video');
+            if (introVideo) {
+                introVideo.addEventListener('ended', () => {
+                    goToSection(1); // Navegar a la segunda sección (índice 1)
+                });
+            }
+
+            function handleScroll(event) {
+                if (isScrolling) return;
+                isScrolling = true;
+                if (event.deltaY > 0) {
+                    goToSection(Math.min(currentSection + 1, sections.length - 1));
+                } else {
+                    goToSection(Math.max(currentSection - 1, 0));
+                }
+                setTimeout(() => { isScrolling = false; }, 1500);
+            }
+
+            function handleKeyDown(event) {
+                if (isScrolling) return;
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    isScrolling = true;
+                    if (event.key === 'ArrowDown') {
+                        goToSection(Math.min(currentSection + 1, sections.length - 1));
+                    } else if (event.key === 'ArrowUp') {
+                        goToSection(Math.max(currentSection - 1, 0));
+                    }
+                    setTimeout(() => { isScrolling = false; }, 1500);
+                }
+            }
+
+            window.addEventListener('wheel', handleScroll);
+            window.addEventListener('keydown', handleKeyDown);
+            updateActiveState();
+            goToSection(0); // Posicionar todas las secciones correctamente al cargar
+
+            // --- Carousel ---
+            const carousel = document.getElementById('image-carousel');
+            if (carousel) {
+                const slides = carousel.querySelectorAll('.carousel-slide');
+                let currentSlide = 0;
+                const slideInterval = setInterval(() => {
+                    slides[currentSlide].classList.remove('active');
+                    currentSlide = (currentSlide + 1) % slides.length;
+                    slides[currentSlide].classList.add('active');
+                }, 3000);
+
+                // Iniciar la transición inmediatamente
+                // No es necesario llamar a la función aquí si la primera diapositiva ya tiene la clase 'active'
+                // El setInterval se encargará de la primera transición después de 3 segundos.
+                // Si queremos que la transición ocurra inmediatamente, necesitamos ajustar la lógica.
+                // Una forma es remover la clase 'active' de todas las diapositivas excepto la primera al inicio,
+                // y luego dejar que el intervalo maneje las transiciones.
+                slides.forEach((slide, index) => {
+                    if (index !== currentSlide) {
+                        slide.classList.remove('active');
+                    }
+                });
+            }
+
+            // --- Lógica de los Popups Modales (con delegación de eventos) ---
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalContent = document.getElementById('modal-content');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const mainContainer = document.getElementById('main-container'); // Obtener el contenedor principal
+
+            function showModal(card) {
+                const title = card.dataset.popupTitle || card.querySelector('h4').textContent;
+                const content = card.dataset.popupContent;
+
+                modalContent.innerHTML = `<h3 class="font-bold text-2xl text-cyan-300 mb-4">${title}</h3><div class="text-base text-gray-300">${content}</div>`;
+                modalOverlay.classList.add('visible');
+            }
+
+            function hideModal() {
+                modalOverlay.classList.remove('visible');
+            }
+
+            // Usar delegación de eventos en el contenedor principal
+            if (mainContainer) {
+                mainContainer.addEventListener('click', (e) => {
+                    const card = e.target.closest('.interactive-card'); // Buscar el ancestro más cercano con la clase interactive-card
+                    if (card) {
+                        console.log('Interactive card clicked via delegation'); // Debugging line
+                        showModal(card);
+                    }
+                });
+            }
+
+
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) {
+                    hideModal();
+                }
+            });
+            modalCloseBtn.addEventListener('click', hideModal);
+
+
+            // --- Animación de fondo con Three.js ---
+            const canvas = document.getElementById('bg-canvas');
+            if (canvas) {
+                let scene, camera, renderer, particlesMesh;
+                let mouseX = 0, mouseY = 0;
+
+                function init() {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setClearColor(0x000000, 0);
+
+                    const particlesGeometry = new THREE.BufferGeometry();
+                    const particlesCnt = 8000;
+                    const posArray = new Float32Array(particlesCnt * 3);
+                    for (let i = 0; i < particlesCnt * 3; i++) {
+                        posArray[i] = (Math.random() - 0.5) * 15;
+                    }
+                    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+                    const particlesMaterial = new THREE.PointsMaterial({
+                        size: 0.025,
+                        color: 0x38bdf8,
+                        blending: THREE.AdditiveBlending,
+                        transparent: true,
+                        sizeAttenuation: true,
+                    });
+                    particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+                    scene.add(particlesMesh);
+                    camera.position.z = 5;
+                    document.addEventListener('mousemove', (e) => {
+                        mouseX = (e.clientX - window.innerWidth / 2) / 2000;
+                        mouseY = (e.clientY - window.innerHeight / 2) / 2000;
+                    });
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                }
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    particlesMesh.rotation.y += 0.0001;
+                    particlesMesh.rotation.x += 0.0001;
+                    camera.position.x += (mouseX - camera.position.x) * 0.1;
+                    camera.position.y += (-mouseY - camera.position.y) * 0.1;
+                    camera.lookAt(scene.position);
+                    renderer.render(scene, camera);
+                };
+                init();
+                animate();
+            }
+        });
+    </script>
+</body>
+
+</html>
