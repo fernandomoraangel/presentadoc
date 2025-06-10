@@ -215,11 +215,14 @@
         }
 
         /* Carousel de Imágenes */
+        /* Estilos para carruseles en general */
         .carousel-container {
             position: relative;
             width: 100%;
             max-width: 450px;
+            /* Default max-width */
             height: 300px;
+            /* Default height */
             border-radius: 1rem;
             overflow: hidden;
             border: 1px solid rgba(56, 189, 248, 0.2);
@@ -234,16 +237,79 @@
             height: 100%;
             opacity: 0;
             transition: opacity 1.5s ease-in-out;
+            display: flex;
+            /* Use flexbox for layout */
+            flex-direction: column;
+            /* Stack content vertically */
+            justify-content: center;
+            /* Center content vertically by default */
+            align-items: center;
+            /* Center content horizontally */
+            padding: 1rem;
+            /* Add some padding */
+            box-sizing: border-box;
+            /* Include padding in the element's total width and height */
         }
 
         .carousel-slide.active {
             opacity: 1;
         }
 
-        .carousel-slide img {
+        /* Estilos específicos para el carrusel automático */
+        #image-carousel .carousel-slide img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+
+        /* Estilos específicos para el carrusel manual (antecedentes) */
+        #antecedentes-carousel.carousel-container {
+            max-width: 600px;
+            /* Adjust max-width for manual carousel */
+            height: 500px;
+            /* Adjust height for manual carousel */
+        }
+
+        #antecedentes-carousel .carousel-slide {
+            justify-content: flex-start;
+            /* Align content to the top for manual carousel */
+        }
+
+        #antecedentes-carousel .carousel-slide img {
+            width: 100%;
+            /* Allow image to take full width of its container */
+            max-height: 60%;
+            /* Limit the height of the image */
+            object-fit: contain;
+            /* Ensure the whole image is visible */
+            margin-bottom: 1rem;
+            /* Add space between image and text */
+            margin-top: 0.5rem;
+            /* Add space between title/author and image */
+        }
+
+        #antecedentes-carousel .carousel-slide p {
+            flex-grow: 1;
+            /* Allow text to take remaining vertical space */
+            overflow-y: auto;
+            /* Add scroll if text is too long */
+            text-align: center;
+            font-size: 1rem;
+            /* Adjust font size if needed */
+            color: #d1d5db;
+            /* Adjust text color if needed */
+            margin-top: 0.5rem;
+            /* Add space between image and caption */
+        }
+
+        #antecedentes-carousel .carousel-slide h4 {
+            font-size: 1.25rem;
+            /* Adjust title/author font size */
+            font-weight: bold;
+            color: #38bdf8;
+            /* Adjust title/author color */
+            margin-bottom: 0.5rem;
+            /* Add space below title/author */
         }
 
         /* Timeline para el Cronograma */
@@ -385,6 +451,73 @@
                     William Blake
                 </footer>
                 <p class="text-xl text-gray-500 mt-4">Augurios de Inocencia (c. 1803)</p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN X: ANTECEDENTES ARTÍSTICOS -->
+        <section id="antecedentes" class="scroll-section">
+            <div class="content-overlay reveal">
+                <h2 class="text-3xl md:text-5xl font-bold mb-8 text-center text-sky-400">Antecedentes Artísticos</h2>
+                <div id="antecedentes-carousel" class="carousel-container max-w-2xl mx-auto">
+                    <div class="carousel-slide active">
+                        <h4>Project Syria por Nonny de la Peña</h4>
+                        <img src="ref-images/nonny-de-la-pena-project-syria.jpg"
+                            alt="Project Syria de Nonny de la Peña">
+                        <p class="text-center text-lg text-gray-300 mt-4">Periodismo inmersivo que te transporta al
+                            corazón de la crisis siria. Esta obra de Nonny de la Peña utiliza la realidad virtual para
+                            generar empatía.</p>
+                    </div>
+                    <div class="carousel-slide">
+                        <h4>Royal Shakespeare Company</h4>
+                        <img src="ref-images/rsc-the-tempest.jpg" alt="Royal Shakespeare Company - The Tempest">
+                        <p class="text-center text-lg text-gray-300 mt-4">El teatro clásico se fusiona con la
+                            tecnología. La Royal Shakespeare Company revoluciona la escena usando captura de movimiento
+                            para dar nueva vida a las obras de Shakespeare.</p>
+                    </div>
+                    <div class="carousel-slide">
+                        <h4>A Father's Lullaby por Rashin Fahandej</h4>
+                        <img src="ref-images/rashin-fahandej-a-fathers-lullaby.jpg"
+                            alt="A Fathers Lullaby de Rashin Fahandej">
+                        <p class="text-center text-lg text-gray-300 mt-4">Un arrullo que traspasa muros. "A Father's
+                            Lullaby" es un archivo vivo de nanas cantadas por padres afectados por el encarcelamiento
+                            masivo, explorando el poder de los vínculos familiares.</p>
+                    </div>
+                    <div class="carousel-slide">
+                        <h4>Stagecraft</h4>
+                        <img src="ref-images/stagecraft.jpg" alt="Stagecraft">
+                        <p class="text-center text-lg text-gray-300 mt-4">Creando nuevos mundos para la narrativa. La
+                            tecnología Stagecraft permite a los artistas construir universos digitales interactivos en
+                            tiempo real, fusionando lo físico y lo virtual.</p>
+                    </div>
+                    <div class="carousel-slide">
+                        <h4>Code Poem por Zach Lieberman</h4>
+                        <img src="ref-images/zach-lieberman-code-poem.jpg" alt="Code poem de Zach Lieberman">
+                        <p class="text-center text-lg text-gray-300 mt-4">Aquí, el código se convierte en poesía visual.
+                            En "Code Poem" de Zach Lieberman, tu voz y tus gestos se transforman en animaciones llenas
+                            de vida y color.</p>
+                    </div>
+                    <div class="carousel-slide">
+                        <h4>Pulse Topology por Rafael Lozano-Hemmer</h4>
+                        <img src="ref-images/rafael-lozano-hemmer-pulse-topology.jpg"
+                            alt="Pulse topology de Rafael Lozano-Hemmer">
+                        <p class="text-center text-lg text-gray-300 mt-4">Un paisaje de luz creado por los latidos del
+                            público. "Pulse Topology" de Rafael Lozano-Hemmer es una instalación que visualiza el ritmo
+                            cardíaco de cada visitante con miles de bombillas.</p>
+                    </div>
+                </div>
+                <!-- Botones de navegación del carrusel -->
+                <button id="antecedentes-carousel-prev"
+                    class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-gray-800/50 text-white p-2 rounded-full z-20 hover:bg-gray-700/70 transition"><svg
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                    </svg></button>
+                <button id="antecedentes-carousel-next"
+                    class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-gray-800/50 text-white p-2 rounded-full z-20 hover:bg-gray-700/70 transition"><svg
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg></button>
             </div>
         </section>
 
@@ -839,29 +972,74 @@
             updateActiveState();
             goToSection(0); // Posicionar todas las secciones correctamente al cargar
 
-            // --- Carousel ---
-            const carousel = document.getElementById('image-carousel');
-            if (carousel) {
-                const slides = carousel.querySelectorAll('.carousel-slide');
-                let currentSlide = 0;
-                const slideInterval = setInterval(() => {
-                    slides[currentSlide].classList.remove('active');
-                    currentSlide = (currentSlide + 1) % slides.length;
-                    slides[currentSlide].classList.add('active');
-                }, 3000);
+            // --- Carousel Initialization Function ---
+            // --- Carousel Initialization Function ---
+            function initializeCarousel(carouselId, manual = false) {
+                const carousel = document.getElementById(carouselId);
+                if (carousel) {
+                    const slides = carousel.querySelectorAll('.carousel-slide');
+                    if (slides.length > 0) {
+                        let currentSlide = 0;
 
-                // Iniciar la transición inmediatamente
-                // No es necesario llamar a la función aquí si la primera diapositiva ya tiene la clase 'active'
-                // El setInterval se encargará de la primera transición después de 3 segundos.
-                // Si queremos que la transición ocurra inmediatamente, necesitamos ajustar la lógica.
-                // Una forma es remover la clase 'active' de todas las diapositivas excepto la primera al inicio,
-                // y luego dejar que el intervalo maneje las transiciones.
-                slides.forEach((slide, index) => {
-                    if (index !== currentSlide) {
-                        slide.classList.remove('active');
+                        // Ensure only the first slide is active initially
+                        slides.forEach((slide, index) => {
+                            if (index === 0) {
+                                slide.classList.add('active');
+                            } else {
+                                slide.classList.remove('active');
+                            }
+                        });
+
+                        const showSlide = (index) => {
+                            slides[currentSlide].classList.remove('active');
+                            currentSlide = index;
+                            slides[currentSlide].classList.add('active');
+                        };
+
+                        if (manual) {
+                            const prevButton = document.getElementById(`${carouselId}-prev`);
+                            const nextButton = document.getElementById(`${carouselId}-next`);
+
+                            console.log(`Carousel: ${carouselId}, Prev Button:`, prevButton); // Debugging
+                            console.log(`Carousel: ${carouselId}, Next Button:`, nextButton); // Debugging
+
+                            if (prevButton) {
+                                prevButton.addEventListener('click', () => {
+                                    showSlide((currentSlide - 1 + slides.length) % slides.length);
+                                });
+                            }
+
+                            if (nextButton) {
+                                nextButton.addEventListener('click', () => {
+                                    showSlide((currentSlide + 1) % slides.length);
+                                });
+                            }
+
+                        } else {
+                            // Automatic carousel
+                            setInterval(() => {
+                                showSlide((currentSlide + 1) % slides.length);
+                            }, 3000); // Adjust interval time if needed
+                        }
                     }
-                });
+                }
             }
+
+            // --- Initialize Carousels ---
+            initializeCarousel('image-carousel'); // Existing automatic carousel
+            initializeCarousel('antecedentes-carousel', true); // New manual carousel
+
+            // --- Add error handling for images in all carousels ---
+            document.querySelectorAll('.carousel-slide img').forEach(img => {
+                img.onerror = function () {
+                    const container = this.parentElement;
+                    // Clear existing content and add the error message
+                    container.innerHTML = '<p class="text-center text-red-500 text-lg mt-4">Imagen no encontrada</p>';
+                    container.classList.add('flex', 'items-center', 'justify-center'); // Center the text
+                    container.style.height = '100%'; // Ensure container takes full height
+                };
+            });
+
 
             // --- Lógica de los Popups Modales (con delegación de eventos) ---
             const modalOverlay = document.getElementById('modal-overlay');
