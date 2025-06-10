@@ -567,19 +567,20 @@
                         entornos 3D simulados apoyados con grandes modelos de lenguaje?</p>
                 </div>
                 <div class="grid md:grid-cols-3 gap-4 text-left max-w-6xl mx-auto">
-                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm">
-                        <p class="text-gray-300 text-sm">1. ¿Cuáles son las estrategias de diseño de entornos 3D
-                            (narrativas, estéticas, de interacción) que potencian la co-creación en las artes del
-                            tiempo?</p>
+                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer question-icon"
+                        data-question="1"
+                        data-full-text="1. ¿Cuáles son las estrategias de diseño de entornos 3D (narrativas, estéticas, de interacción) que potencian la co-creación en las artes del tiempo?">
+                        <span class="text-blue-500 text-5xl">❓</span>
                     </div>
-                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm">
-                        <p class="text-gray-300 text-sm">2. ¿Cómo integrar efectivamente herramientas colaborativas y
-                            grandes modelos de lenguaje en entornos 3D para potenciar la creatividad y la co-creación?
-                        </p>
+                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer question-icon"
+                        data-question="2"
+                        data-full-text="2. ¿Cómo integrar efectivamente herramientas colaborativas y grandes modelos de lenguaje en entornos 3D para potenciar la creatividad y la co-creación?">
+                        <span class="text-blue-500 text-5xl">❓</span>
                     </div>
-                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm">
-                        <p class="text-gray-300 text-sm">3. ¿Cómo validar la experiencia de co-creación al utilizar
-                            narrativas inmersivas en entornos 3D simulados?</p>
+                    <div class="bg-gray-800/20 p-4 rounded-xl border border-gray-700 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer question-icon"
+                        data-question="3"
+                        data-full-text="3. ¿Cómo validar la experiencia de co-creación al utilizar narrativas inmersivas en entornos 3D simulados?">
+                        <span class="text-blue-500 text-5xl">❓</span>
                     </div>
                 </div>
             </div>
@@ -1132,6 +1133,24 @@
                 init();
                 animate();
             }
+        });
+        // Interactividad para las preguntas de investigación
+        document.addEventListener('DOMContentLoaded', () => {
+            const questionIcons = document.querySelectorAll('.question-icon');
+
+            questionIcons.forEach(icon => {
+                icon.addEventListener('click', () => {
+                    const fullText = icon.dataset.fullText;
+
+                    if (fullText && !icon.classList.contains('revealed')) {
+                        // Remove icon and add text
+                        icon.innerHTML = `<p class="text-gray-300 text-sm text-center">${fullText}</p>`;
+                        icon.classList.remove('flex', 'flex-col', 'items-center', 'justify-center', 'cursor-pointer');
+                        icon.classList.add('text-only', 'p-4'); // Add classes for text styling and padding
+                        icon.classList.add('revealed'); // Mark as revealed
+                    }
+                });
+            });
         });
     </script>
 </body>
